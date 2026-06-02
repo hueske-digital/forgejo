@@ -1,0 +1,58 @@
+services:
+  app:
+    image: codeberg.org/forgejo/forgejo:latest
+    restart: unless-stopped
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - FORGEJO__database__DB_TYPE=postgres
+      - FORGEJO__database__HOST=db:5432
+      - FORGEJO__database__NAME=forgejo
+      - FORGEJO__database__USER=forgejo
+      - FORGEJO__database__PASSWD=forgejo
+      - FORGEJO__server__DOMAIN=${FORGEJO_DOMAIN}
+      - FORGEJO__server__ROOT_URL=https://${FORGEJO_DOMAIN}/
+      - FORGEJO__server__HTTP_PORT=3000
+      - FORGEJO__server__SSH_DOMAIN=${FORGEJO_DOMAIN}
+      - FORGEJO__server__SSH_PORT=${FORGEJO_SSH_PORT:-222}
+      - FORGEJO__security__INSTALL_LOCK=true
+      - FORGEJO__service__DISABLE_REGISTRATION=false
+      - FORGEJO__service__ALLOW_ONLY_EXTERNAL_REGISTRATION=true
+      - FORGEJO__service__SHOW_REGISTRATION_BUTTON=false
+      - CADDY_DOMAIN=${FORGEJO_DOMAIN}
+      - CADDY_TYPE=external
+      - CADDY_PORT=3000
+    volumes:
+      - forgejo_data:/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${FORGEJO_SSH_PORT:-222}:22"
+    networks:
+      default:
+      caddy:
+    depends_on:
+      - db
+
+  db:
+    image: pgautoupgrade/pgautoupgrade:latest
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=forgejo
+      - POSTGRES_PASSWORD=forgejo
+      - POSTGRES_DB=forgejo
+    volumes:
+      - db_data:/var/lib/postgresql
+    networks:
+      default:
+    labels:
+      ofelia.restart: "true"
+      ofelia.enabled: "true"
+      ofelia.job-exec.forgejodbbackup.schedule: "0 0 1 * * *"
+      ofelia.job-exec.forgejodbbackup.command: "sh -c 'pg_dumpall -U forgejo -f /var/lib/postgresql/backup.sql'"
+
+volumes:
+  forgejo_data:
+  db_data:
+
+networks:
+  caddy:
