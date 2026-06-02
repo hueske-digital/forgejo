@@ -19,6 +19,7 @@ services:
       - FORGEJO__service__DISABLE_REGISTRATION=false
       - FORGEJO__service__ALLOW_ONLY_EXTERNAL_REGISTRATION=true
       - FORGEJO__service__SHOW_REGISTRATION_BUTTON=false
+      - FORGEJO__service__ENABLE_PASSWORD_SIGNIN_FORM=false
       - CADDY_DOMAIN=${FORGEJO_DOMAIN}
       - CADDY_TYPE=external
       - CADDY_PORT=3000
